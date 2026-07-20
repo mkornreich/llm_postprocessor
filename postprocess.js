@@ -12,11 +12,9 @@
                     ones, writes big numbers the "ten hundred" way, and uses the
                     eager plain voice. Using words a small child would know.
 
-   The kid-mode pipeline is ported from the "Cool Concepts" LLM postprocessor
-   (https://mkornreich.me/projects/coolconcepts). The fancy->simple swap table
-   lives in simplify.js (window.__SIMPLIFY). The "ten hundred" common-word list
-   lives in words.js (window.__WORDS), from xkcd's Simple Writer
-   (https://xkcd.com/simplewriter/).
+   The fancy->simple swap table lives in simplify.js (window.__SIMPLIFY); the
+   "ten hundred" common-word list lives in words.js (window.__WORDS), from
+   xkcd's Simple Writer (https://xkcd.com/simplewriter/).
 
    Works in the browser (as window.PostProcessor, after words.js + simplify.js
    are loaded) and in Node (require the two data files first, then this one).

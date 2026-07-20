@@ -7,7 +7,7 @@ Two modes:
 - Regular. The "de-LLM" clean-up: strips markdown, breaks up them-dashes, semicolons and ellipses into plain sentences, undoes contractions and slang, and drops hedging. But keeps every word as it is. The normal, grown-up version.
 - Kid mode (xkcd). Everything Regular does, plus the child-friendly [xkcd Thing Explainer](https://xkcd.com/thing-explainer/) layer: it swaps fancy words for plain ones, writes big numbers the "ten hundred" way, and uses the eager plain voice. Only words a small child would know.
 
-Kid mode is ported from the LLM postprocessor in [Cool Concepts](https://mkornreich.me/projects/coolconcepts). The "ten hundred" simple-word list comes from xkcd's [Simple Writer](https://xkcd.com/simplewriter/).
+The "ten hundred" simple-word list comes from xkcd's [Simple Writer](https://xkcd.com/simplewriter/).
 
 ## Try it
 
@@ -85,5 +85,4 @@ PostProcessor.fancyWords(text);                    // words still outside the si
 
 ## Credits
 
-- Kid-mode pipeline and swap table: [Cool Concepts](https://mkornreich.me/projects/coolconcepts).
 - Simple-word list: [xkcd Simple Writer](https://xkcd.com/simplewriter/) (CC BY-NC 2.5, xkcd).

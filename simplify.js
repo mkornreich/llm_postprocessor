@@ -1,4 +1,4 @@
-/* Cool Concepts SIMPLIFY dict: fancy word -> simple ("ten hundred") swap.
+/* SIMPLIFY dict: fancy word -> simple ("ten hundred") swap.
    Loaded before the page script (sets window.__SIMPLIFY). Keys were seeded by
    running SmolLM2 (transformers.js, in Node) and Chrome's Gemini Nano over many
    concepts and collecting the fancy words they reach for; every replacement
