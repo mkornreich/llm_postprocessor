@@ -1,19 +1,20 @@
 /* ============================================================================
-   LLM POSTPROCESSOR — text in, text out.
+   LLM POSTPROCESSOR. Text in, text out.
 
    Takes the raw text an LLM produced and rewrites it. Two modes:
 
-     • "regular"  — leaves the text as it is (just trims it). This is the
-                    normal, grown-up version.
-     • "kid"      — the child-friendly / xkcd "Thing Explainer" version: it
-                    swaps fancy words for plain ones, writes big numbers the
-                    "ten hundred" way, undoes contractions and slang, drops
-                    hedging, and keeps the plain, sure-of-itself xkcd voice —
-                    using words a small child would know.
+     • "regular". The "de-LLM" clean-up: strips markdown, breaks them-dashes,
+                    semicolons and ellipses into plain sentences, undoes
+                    contractions and slang, and drops hedging. But keeps every
+                    word as-is. The normal, grown-up version.
+     • "kid". Everything regular does, PLUS the child-friendly / xkcd
+                    "Thing Explainer" layer: it swaps fancy words for plain
+                    ones, writes big numbers the "ten hundred" way, and uses the
+                    eager plain voice. Using words a small child would know.
 
    The kid-mode pipeline is ported from the "Cool Concepts" LLM postprocessor
    (https://mkornreich.me/projects/coolconcepts). The fancy->simple swap table
-   lives in simplify.js (window.__SIMPLIFY); the "ten hundred" common-word list
+   lives in simplify.js (window.__SIMPLIFY). The "ten hundred" common-word list
    lives in words.js (window.__WORDS), from xkcd's Simple Writer
    (https://xkcd.com/simplewriter/).
 
@@ -48,9 +49,9 @@
     if (_simplifyRe) { return _simplify; }              // already built
     var src = (G.__SIMPLIFY && typeof G.__SIMPLIFY === "object") ? G.__SIMPLIFY : {};
     var keys = Object.keys(src);
-    if (!keys.length) { return (_simplify = _simplify || {}); }   // not loaded yet — don't lock in empty
+    if (!keys.length) { return (_simplify = _simplify || {}); }   // not loaded yet. Do not lock in empty
     _simplify = src;
-    // \b...\b around an alternation of every fancy word (longest first so
+    // \b.\b around an alternation of every fancy word (longest first so
     // multi-word keys like "computer program" win over "computer").
     keys.sort(function (a, b) { return b.length - a.length; });
     _simplifyRe = new RegExp("\\b(" + keys.map(escapeRe).join("|") + ")\\b", "gi");
@@ -60,7 +61,7 @@
 
   // ── individual text transforms (each is pure: string -> string) ────────────
 
-  // Chat models wrap words in markdown emphasis (*italic*, **bold**) or code
+  // Chat models wrap words in markdown emphasis (italic, bold) or code
   // ticks. Strip the markers, keep the text.
   function deMarkdown(s) {
     s = (s || "");
@@ -70,12 +71,14 @@
     return s.replace(/\*+/g, "");               // any stray asterisks
   }
 
-  // A long dash between clauses becomes an exclamation break, so no long
-  // dashes survive. A spaced single hyphen starts a fresh sentence.
-  function deDash(s) {
+  // A long dash between clauses becomes a sentence break, so no long dashes
+  // survive. brk is the break mark: "!" for kid mode's eager voice, "." for
+  // regular mode's plain one. A spaced single hyphen always starts a sentence.
+  function deDash(s, brk) {
+    var b = brk || "!";
     s = s.replace(/\s*(?:[—–―‒−]|--)\s*([A-Za-z])/g,
-      function (_, ch) { return "! " + ch.toUpperCase(); });
-    s = s.replace(/\s*(?:[—–―‒−]|--)\s*/g, "! ");
+      function (_, ch) { return b + " " + ch.toUpperCase(); });
+    s = s.replace(/\s*(?:[—–―‒−]|--)\s*/g, b + " ");
     s = s.replace(/\s+-\s+([A-Za-z])/g, function (_, ch) { return ". " + ch.toUpperCase(); });
     return s.replace(/\s+-\s+/g, ". ");
   }
@@ -94,7 +97,7 @@
   }
 
   // xkcd / "Thing Explainer" writes big numbers the "ten hundred" way, because
-  // thousand/million/... are not simple words. "thousands of X" -> "lots of X".
+  // thousand/million/. Are not simple words. "thousands of X" -> "lots of X".
   var BIG_NUMS = {
     thousand: "ten hundred",
     million: "ten hundred hundred",
@@ -111,7 +114,7 @@
     });
   }
 
-  // Contractions -> long forms, so "don't" reads as "do not" (both simple
+  // Contractions -> long forms, so "do not" reads as "do not" (both simple
   // words). Only tokens with an apostrophe are touched, so plain words
   // ("were", "well") and possessives are left alone.
   var CONTRACTIONS = {
@@ -176,25 +179,25 @@
     return s;
   }
 
-  // Drop hedging openers ("Well,", "Maybe", "I think") and turn "sounds like"
+  // Drop hedging openers ("Well,", "Maybe", "I think") and turn "is like"
   // into "is like", so the text states what a thing IS.
   function stripHedge(s) {
-    // "So," / "Well," at the very start are hedges — but bare "So many…" and
-    // "Well done…" are real content, so only strip so/well when a comma follows.
-    // (The original only ran on short one-line blurbs; this tool sees any text.)
+    // "So," / "Well," at the very start are hedges. But bare "So many." and
+    // "Well done." are real content, so only strip so/well when a comma follows.
+    // (The original only ran on short one-line blurbs. This tool sees any text.)
     var stripped = s
       .replace(/^\s*(?:so|well)\s*,\s*/i, "")
       .replace(/^\s*(?:maybe|perhaps|probably|honestly|basically|i think|i guess|i believe|it seems(?: like)?|it looks like)[,\s]+/i, "");
     var removedOpener = stripped !== s;
     stripped = stripped.replace(/\bsounds? like\b/gi, "is like");
-    // Only re-capitalize when a leading hedge was actually removed, so we don't
+    // Only re-capitalize when a leading hedge was actually removed, so we do not
     // clobber intentionally-lowercase openers like "iOS" or "eBay".
     return (removedOpener && stripped)
       ? stripped.charAt(0).toUpperCase() + stripped.slice(1)
       : stripped;
   }
 
-  // Swap fancy words for the plain ones in the simplify table. `skip` is a set
+  // Swap fancy words for the plain ones in the simplify table. skip is a set
   // of lowercased words to leave alone (e.g. the topic's own words).
   function applySimple(s, skip) {
     var table = simplifyTable();
@@ -208,12 +211,23 @@
     });
   }
 
-  // Run the full kid-mode text cleanup (voice + numbers + de-formatting).
+  // The shared "de-LLM" cleanup, used by BOTH modes: strip markdown, break
+  // them-dashes / semicolons / ellipses into plain sentences, undo contractions
+  // and slang, and drop hedging. It changes no vocabulary. That is the
+  // kid-only xkcd layer. This IS regular mode's whole pipeline.
+  function clean(s) {
+    return stripHedge(deEllipsis(deSemicolon(expandSlang(
+      expandContractions(deDash(deMarkdown((s || "").trim()), "."))))));
+  }
+
+  // Kid mode = the shared cleanup PLUS the xkcd "Thing Explainer" layer: the
+  // eager "!" break, "ten hundred" numbers, and plain-voice phrase swaps. The
+  // fancy->simple word swap (applySimple) is layered on top by process().
   // Unlike the original (which trimmed to a one-line blurb) this keeps ALL of
   // the text, so it works on answers of any length.
   function tidy(s) {
     return stripHedge(deEllipsis(deSemicolon(xkcdVoice(expandSlang(
-      expandContractions(xkcdNumbers(deDash(deMarkdown((s || "").trim())))))))));
+      expandContractions(xkcdNumbers(deDash(deMarkdown((s || "").trim()), "!"))))))));
   }
 
   // ── public helpers ─────────────────────────────────────────────────────────
@@ -239,7 +253,7 @@
 
   // Words still outside the "ten hundred" list after processing (the ones a
   // strict xkcd reader would still underline). Single letters and the topic's
-  // own `keep` words don't count.
+  // own keep words do not count.
   function fancyWords(text, keep) {
     var skip = toSkipSet(keep), simple = simpleWords();
     var out = [], seen = new Set(), m, re = /[A-Za-z][A-Za-z']*/g;
@@ -254,20 +268,22 @@
   }
 
   // The one call the app uses: raw LLM text in, finished text out.
-  //   mode: "regular" (leave it alone) | "kid" (xkcd simplify). Default "kid".
+  //   mode: "regular" (de-LLM cleanup only, keeps every word) | "kid" (also do
+  //         the xkcd "Thing Explainer" rewrite). Default "kid".
   //   keep: word(s) or phrase(s) to never simplify (string or array), e.g. the
-  //         topic. Pass an array to protect several distinct phrases.
+  //         topic. Pass an array to protect several distinct phrases. (kid only)
   function process(text, opts) {
     opts = opts || {};
     var mode = opts.mode === "regular" ? "regular" : "kid";
     var raw = (text == null ? "" : String(text));
-    if (mode === "regular") { return raw.trim(); }
+    if (mode === "regular") { return clean(raw); }
     return applySimple(tidy(raw), toSkipSet(opts.keep));
   }
 
   return {
     MODES: ["regular", "kid"],
     process: process,
+    clean: clean,
     tidy: tidy,
     applySimple: applySimple,
     fancyWords: fancyWords,

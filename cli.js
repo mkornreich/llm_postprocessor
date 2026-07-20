@@ -2,11 +2,11 @@
 /* LLM postprocessor on the command line: text in (stdin or an argument),
    processed text out (stdout).
 
-     echo "It's fundamentally a thousand tiny mechanisms." | node cli.js
-     node cli.js --regular "leave this text alone"
+     echo "It is fundamentally a thousand tiny mechanisms." | node cli.js
+     node cli.js. Regular "leave this text alone"
      node cli.js "make this simple"                 # kid mode is the default
 
-   Flags:  --kid (default)   --regular   --fancy (list words still not simple)
+   Flags:. Kid (default). Regular. Fancy (list words still not simple)
 */
 "use strict";
 require("./words.js");        // populates globalThis.__WORDS

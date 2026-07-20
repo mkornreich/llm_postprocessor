@@ -1,36 +1,38 @@
 # LLM Postprocessor
 
-A tiny JavaScript tool that takes the text an LLM produced and rewrites it. **Text in, text out.**
+A tiny JavaScript tool that takes the text an LLM produced and rewrites it. Text in, text out.
 
 Two modes:
 
-- **Regular** — leaves the text as it is (just trims it). The normal, grown-up version.
-- **Kid mode (xkcd)** — the child-friendly, [xkcd *Thing Explainer*](https://xkcd.com/thing-explainer/) version. It swaps fancy words for plain ones, writes big numbers the "ten hundred" way, undoes contractions and slang, drops hedging, and keeps the plain, sure-of-itself xkcd voice — using only words a small child would know.
+- Regular. The "de-LLM" clean-up: strips markdown, breaks up them-dashes, semicolons and ellipses into plain sentences, undoes contractions and slang, and drops hedging. But keeps every word as it is. The normal, grown-up version.
+- Kid mode (xkcd). Everything Regular does, plus the child-friendly [xkcd Thing Explainer](https://xkcd.com/thing-explainer/) layer: it swaps fancy words for plain ones, writes big numbers the "ten hundred" way, and uses the eager plain voice. Only words a small child would know.
 
-Kid mode is ported from the LLM postprocessor in [**Cool Concepts**](https://mkornreich.me/projects/coolconcepts). The "ten hundred" simple-word list comes from xkcd's [Simple Writer](https://xkcd.com/simplewriter/).
+Kid mode is ported from the LLM postprocessor in [Cool Concepts](https://mkornreich.me/projects/coolconcepts). The "ten hundred" simple-word list comes from xkcd's [Simple Writer](https://xkcd.com/simplewriter/).
 
 ## Try it
 
-Open `index.html` in any browser — no build step, no server, no dependencies. Everything runs locally; no text ever leaves the page.
+Open `index.html` in any browser. No build step, no server, no dependencies. Everything runs locally. No text ever leaves the page.
 
 ```
 # or serve it, if your browser blocks file:// scripts
 python3 -m http.server 8000    # then open http://localhost:8000
 ```
 
-Paste some LLM output, flip between **Regular** and **Kid mode**, and copy the result.
+Paste some LLM output, flip between Regular and Kid mode, and copy the result.
 
 ### Example
 
 > **In:** Photosynthesis is the **process** by which plants convert sunlight into energy. It's fundamentally a mechanism that generates roughly a thousand molecules of glucose.
 
-> **Kid mode out:** Photosynthesis is the steps by which plants change sunlight into power. It is at heart a how it works that makes about ten hundred tiny bits of glucose.
+> **Regular out:** Photosynthesis is the process by which plants convert sunlight into energy. It is fundamentally a mechanism that generates roughly a thousand molecules of glucose.
+
+> **Kid mode out:** Photosynthesis is the steps by which plants change sunlight into power. It is at heart a how it works that makes about a ten hundred tiny bits of glucose.
 
 ## On the command line
 
 ```sh
 echo "It's fundamentally a thousand tiny mechanisms." | node cli.js
-node cli.js --regular "leave this text alone"
+node cli.js --regular "It's basically a thousand tiny mechanisms."   # de-LLM clean-up, keeps the words
 node cli.js --fancy "utilize the algorithm"     # also lists words still not simple
 ```
 
@@ -38,7 +40,7 @@ node cli.js --fancy "utilize the algorithm"     # also lists words still not sim
 
 The core is one dependency-free function.
 
-**Browser** — load the three scripts, then call `PostProcessor`:
+Browser. Load the three scripts, then call `PostProcessor`:
 
 ```html
 <script src="words.js"></script>
@@ -50,7 +52,7 @@ The core is one dependency-free function.
 </script>
 ```
 
-**Node:**
+Node:
 
 ```js
 require("./words.js");
@@ -65,18 +67,18 @@ PostProcessor.fancyWords(text);                    // words still outside the si
 
 | Call | Does |
 | --- | --- |
-| `process(text, { mode, keep })` | Main entry. `mode` is `"kid"` (default) or `"regular"`. `keep` is a word/phrase (or array of them) to never simplify — e.g. the topic. |
+| `process(text, { mode, keep })` | Main entry. `mode` is `"kid"` (default: de-LLM clean-up plus the xkcd rewrite) or `"regular"` (just the de-LLM clean-up, keeps every word). `keep` is a word/phrase (or array) to never simplify. E.g. the topic (kid mode only). |
 | `fancyWords(text, keep)` | Array of words in `text` not in the "ten hundred" simple list. |
 | `isSimple(word)` | Is this word one of the simple words? |
 | `tidy(text)` | Just the kid-mode voice cleanup (no word swaps). |
-| `transforms.*` | The individual steps (`deMarkdown`, `xkcdNumbers`, `expandContractions`, …) for reuse/testing. |
+| `transforms.*` | The individual steps (`deMarkdown`, `xkcdNumbers`, `expandContractions`,.) for reuse/testing. |
 
 ## Files
 
 | File | What |
 | --- | --- |
 | `index.html` / `app.js` / `style.css` | The web app. |
-| `postprocess.js` | The postprocessor — the whole pipeline, browser + Node. |
+| `postprocess.js` | The postprocessor. The whole pipeline, browser + Node. |
 | `cli.js` | Command-line wrapper. |
 | `words.js` | The xkcd Simple Writer "ten hundred" word list. |
 | `simplify.js` | The fancy → simple swap table (903 entries). |

@@ -51,7 +51,7 @@
     }
   }
 
-  // Debounce keystrokes so a long paste doesn't re-run the big swap on every
+  // Debounce keystrokes so a long paste does not re-run the big swap on every
   // single character.
   var timer = null;
   function scheduleRender() {
