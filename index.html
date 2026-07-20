@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Postprocessor</title>
+  <meta name="description" content="Rewrite LLM output two ways: leave it regular, or make it child-friendly xkcd 'Thing Explainer' text.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1>LLM Postprocessor</h1>
+      <p class="tagline">Paste what an AI wrote. Get it back two ways.</p>
+    </header>
+
+    <div class="modes" role="radiogroup" aria-label="Output mode">
+      <label class="mode">
+        <input type="radio" name="mode" value="regular">
+        <span class="mode-face">
+          <strong>Regular</strong>
+          <small>leave the text as it is</small>
+        </span>
+      </label>
+      <label class="mode">
+        <input type="radio" name="mode" value="kid" checked>
+        <span class="mode-face">
+          <strong>Kid mode <span class="xkcd-tag">xkcd</span></strong>
+          <small>only simple words, like “Thing Explainer”</small>
+        </span>
+      </label>
+    </div>
+
+    <div class="panes">
+      <section class="pane">
+        <div class="pane-head">
+          <label for="input">LLM output</label>
+          <button type="button" id="sample" class="link-btn">try an example</button>
+        </div>
+        <textarea id="input" spellcheck="false"
+          placeholder="Paste the text an AI (ChatGPT, Claude, Gemini, a local model…) gave you."></textarea>
+      </section>
+
+      <section class="pane">
+        <div class="pane-head">
+          <label for="output">Postprocessed</label>
+          <button type="button" id="copy" class="link-btn">copy</button>
+        </div>
+        <textarea id="output" spellcheck="false" readonly
+          placeholder="The rewritten text shows up here."></textarea>
+        <p id="meta" class="meta" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <footer class="foot">
+      <p>
+        Kid mode is ported from the
+        <a href="https://mkornreich.me/projects/coolconcepts" target="_blank" rel="noopener">Cool Concepts</a>
+        postprocessor. The simple-word list is xkcd’s
+        <a href="https://xkcd.com/simplewriter/" target="_blank" rel="noopener">Simple Writer</a>
+        “ten hundred” words. Everything runs in your browser — no text ever leaves this page.
+      </p>
+    </footer>
+  </main>
+
+  <script src="words.js"></script>
+  <script src="simplify.js"></script>
+  <script src="postprocess.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
