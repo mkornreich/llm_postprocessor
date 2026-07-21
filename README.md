@@ -80,6 +80,7 @@ PostProcessor.fancyWords(text);                    // words still outside the si
 | `index.html` / `app.js` / `style.css` | The web app. |
 | `postprocess.js` | The postprocessor. The whole pipeline, browser + Node. |
 | `cli.js` | Command-line wrapper. |
+| `test.js` | Dependency-free test suite — run `node test.js`. |
 | `words.js` | The xkcd Simple Writer "ten hundred" word list. |
 | `simplify.js` | The fancy → simple swap table (903 entries). |
 
