@@ -48,7 +48,10 @@ eq("kid full pipeline", k("It’s fundamentally a thousand things."), "It is at 
 eq("regular expands contractions", r("It's a test."), "It is a test.");
 eq("regular breaks semicolons", r("A works; B fails."), "A works. B fails.");
 eq("regular keeps vocabulary", r("utilize the algorithm."), "utilize the algorithm.");
-eq("kid keeps iOS", k("iOS is a system."), "iOS is a set of things.");
+eq("regular keeps iOS (conservative voice)", r("iOS is a system."), "iOS is a system.");
+eq("kid always-capitalizes (eager voice)", k("iOS is a system."), "IOS is a set of things.");
+eq("kid strips a bare 'So' opener", k("So it works."), "It works.");
+eq("regular keeps a bare 'So' (no comma)", r("So many dogs."), "So many dogs.");
 eq("we'll / we're expand", r("We're happy and we'll go."), "We are happy and we will go.");
 eq("keep protects a phrase", P.process("A computer program runs.", { mode: "kid", keep: "computer program" }), "A computer program runs.");
 

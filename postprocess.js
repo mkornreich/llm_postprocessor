@@ -194,19 +194,25 @@
     return s;
   }
 
-  // Drop hedging openers ("Well,", "Maybe", "I think") and turn "is like"
+  // Drop hedging openers ("Well,", "Maybe", "I think") and turn "sounds like"
   // into "is like", so the text states what a thing IS.
-  function stripHedge(s) {
-    // "So," / "Well," at the very start are hedges. But bare "So many." and
-    // "Well done." are real content, so only strip so/well when a comma follows.
-    // (The original only ran on short one-line blurbs. This tool sees any text.)
+  //   eager (kid mode): strip a leading "so"/"well" even without a comma, and
+  //     always capitalize the first letter — the confident xkcd "Thing
+  //     Explainer" voice.
+  //   otherwise (regular mode): only strip "so"/"well" when a comma follows, and
+  //     re-capitalize only when a hedge was actually removed, so bare "So many…"
+  //     and intentionally-lowercase openers like "iOS" survive.
+  function stripHedge(s, eager) {
+    if (eager) {
+      s = s.replace(/^\s*(?:well|so|maybe|perhaps|probably|honestly|basically|i think|i guess|i believe|it seems(?: like)?|it looks like)[,\s]+/i, "");
+      s = s.replace(/\bsounds? like\b/gi, "is like");
+      return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    }
     var stripped = s
       .replace(/^\s*(?:so|well)\s*,\s*/i, "")
       .replace(/^\s*(?:maybe|perhaps|probably|honestly|basically|i think|i guess|i believe|it seems(?: like)?|it looks like)[,\s]+/i, "");
     var removedOpener = stripped !== s;
     stripped = stripped.replace(/\bsounds? like\b/gi, "is like");
-    // Only re-capitalize when a leading hedge was actually removed, so we do not
-    // clobber intentionally-lowercase openers like "iOS" or "eBay".
     return (removedOpener && stripped)
       ? stripped.charAt(0).toUpperCase() + stripped.slice(1)
       : stripped;
@@ -242,7 +248,7 @@
   // the text, so it works on answers of any length.
   function tidy(s) {
     return stripHedge(deEllipsis(deSemicolon(xkcdVoice(expandSlang(
-      expandContractions(xkcdNumbers(deDash(deMarkdown((s || "").trim()), "!"))))))));
+      expandContractions(xkcdNumbers(deDash(deMarkdown((s || "").trim()), "!"))))))), true);
   }
 
   // ── public helpers ─────────────────────────────────────────────────────────
