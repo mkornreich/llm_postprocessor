@@ -59,33 +59,42 @@
 
   // ── individual text transforms (each is pure: string -> string) ────────────
 
-  // Chat models wrap words in markdown emphasis (italic, bold) or code
-  // ticks. Strip the markers, keep the text.
+  // Chat models wrap words in markdown emphasis (*italic*, **bold**) or code
+  // ticks. Strip the markers, keep the text. Only *paired* asterisks are treated
+  // as emphasis — a lone "*" is left as-is, so literal ones survive (the A*
+  // search algorithm, "5 * 3", a footnote asterisk).
   function deMarkdown(s) {
     s = (s || "");
     s = s.replace(/\*\*([^*]+)\*\*/g, "$1");   // bold
     s = s.replace(/\*([^*\n]+)\*/g, "$1");     // italic
-    s = s.replace(/`+/g, "");                   // code ticks
-    return s.replace(/\*+/g, "");               // any stray asterisks
+    return s.replace(/`+/g, "");                // code ticks
   }
 
-  // A long dash between clauses becomes a sentence break, so no long dashes
-  // survive. brk is the break mark: "!" for kid mode's eager voice, "." for
-  // regular mode's plain one. A spaced single hyphen always starts a sentence.
+  // A long dash (em/en/horbar/minus or "--") between clauses becomes a sentence
+  // break, so no long dashes survive. `brk` is the break mark: "!" for kid
+  // mode's eager voice, "." for regular. A spaced single hyphen also starts a
+  // sentence. A dash BETWEEN TWO DIGITS is a range (1–14, 2020–2024) and is left
+  // alone.
   function deDash(s, brk) {
     var b = brk || "!";
-    s = s.replace(/\s*(?:[—–―‒−]|--)\s*([A-Za-z])/g,
-      function (_, ch) { return b + " " + ch.toUpperCase(); });
-    s = s.replace(/\s*(?:[—–―‒−]|--)\s*/g, b + " ");
-    s = s.replace(/\s+-\s+([A-Za-z])/g, function (_, ch) { return ". " + ch.toUpperCase(); });
-    return s.replace(/\s+-\s+/g, ". ");
+    var cap = function (ch) { return ch ? (/[A-Za-z]/.test(ch) ? ch.toUpperCase() : ch) : ""; };
+    s = s.replace(/(\d?)\s*(?:[—–―‒−]|--)\s*([A-Za-z0-9])?/g, function (m, d1, ch) {
+      if (d1 && ch && /\d/.test(ch)) { return m; }         // digit–digit range → keep verbatim
+      return d1 + b + " " + cap(ch);
+    });
+    s = s.replace(/(\d?)\s+-\s+([A-Za-z0-9])?/g, function (m, d1, ch) {
+      if (d1 && ch && /\d/.test(ch)) { return m; }         // "5 - 10" range → keep verbatim
+      return d1 + ". " + cap(ch);
+    });
+    return s;
   }
 
-  // An ellipsis becomes a fresh sentence when the thought keeps going.
+  // An ellipsis ("…" or three-or-more dots) becomes a fresh sentence when the
+  // thought keeps going. Two dots ("600..749") are a range/typo, left alone.
   function deEllipsis(s) {
-    s = s.replace(/\s*(?:…|\.(?:\s*\.)+)\s*([A-Za-z])/g,
+    s = s.replace(/\s*(?:…|\.(?:\s*\.){2,})\s*([A-Za-z])/g,
       function (_, ch) { return ". " + ch.toUpperCase(); });
-    return s.replace(/\s*(?:…|\.(?:\s*\.)+)\s*/g, ".");
+    return s.replace(/\s*(?:…|\.(?:\s*\.){2,})\s*/g, ".");
   }
 
   // No semicolons for kids: a semicolon becomes a new sentence.
@@ -154,9 +163,17 @@
     gotta: "got to", gonna: "going to", wanna: "want to"
   };
   function expandSlang(s) {
-    return s.replace(/['’]?\b([A-Za-z]+)\b/g, function (m, w) {
-      var full = SLANG[w.toLowerCase()];
+    return s.replace(/(['’]?)\b([A-Za-z]+)\b/g, function (m, apos, w, off, str) {
+      var lw = w.toLowerCase();
+      var full = SLANG[lw];
       if (!full) { return m; }
+      // "em" for "them" is virtually always written "'em"; a bare "em" is the
+      // typographic term ("em dash") or wordplay ("lick-em"), so only expand it
+      // when the apostrophe is there.
+      if (lw === "em" && !apos) { return m; }
+      // An apostrophe that is really inside a word ("y'gonna") is not an elision
+      // marker — leave the token so we don't drop the "'" and fuse the words.
+      if (apos && /[A-Za-z]/.test(str.charAt(off - 1))) { return m; }
       return /^[A-Z]/.test(w) ? full.charAt(0).toUpperCase() + full.slice(1) : full;
     });
   }
