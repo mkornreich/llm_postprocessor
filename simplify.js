@@ -819,7 +819,6 @@
   system: "set of things",
   systematic: "in order",
   systems: "sets of things",
-  tag: "a small sign",
   tastes: "how food is in your mouth",
   tasty: "good to eat",
   technique: "way",
