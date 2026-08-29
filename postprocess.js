@@ -97,10 +97,14 @@
     return s.replace(/\s*(?:…|\.(?:\s*\.){2,})\s*/g, ".");
   }
 
-  // No semicolons for kids: a semicolon becomes a new sentence.
+  // No semicolons for kids: a semicolon becomes a new sentence. But a ";" that
+  // terminates an HTML entity (&amp; &middot; &rarr; &#8212; &#x2014;) is part of
+  // one glyph, not a clause break, so it is left intact — otherwise the entity is
+  // corrupted into "&amp." and renders as literal text. The negative lookbehind
+  // skips any ";" that closes a "&…"/"&#…" run (named or numeric).
   function deSemicolon(s) {
-    s = s.replace(/\s*;\s*([A-Za-z])/g, function (_, ch) { return ". " + ch.toUpperCase(); });
-    return s.replace(/\s*;\s*/g, ". ");
+    s = s.replace(/(?<!&#?[a-zA-Z0-9]+)\s*;\s*([A-Za-z])/g, function (_, ch) { return ". " + ch.toUpperCase(); });
+    return s.replace(/(?<!&#?[a-zA-Z0-9]+)\s*;\s*/g, ". ");
   }
 
   // xkcd / "Thing Explainer" writes big numbers the "ten hundred" way, because
