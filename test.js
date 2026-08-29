@@ -43,6 +43,14 @@ eq("apostrophe em expands", r("Go get ’em all."), "Go get them all.");
 eq("intra-word apostrophe kept", P.transforms.expandSlang("y’gonna fall"), "y’gonna fall");
 eq("normal slang expands", r("I kinda wanna go."), "I kind of want to go.");
 
+// deSemicolon: a ";" that closes an HTML entity is one glyph, not a clause break.
+eq("named entity kept", r("Nurses &middot; aides."), "Nurses &middot; aides.");
+eq("arrow entity kept", r("Go &rarr; there now."), "Go &rarr; there now.");
+eq("numeric entity kept", r("A &#8212; B here."), "A &#8212; B here.");
+eq("hex entity kept", r("A &#x2014; B here."), "A &#x2014; B here.");
+eq("real semicolon breaks near entity", r("See &amp; more; it works."), "See &amp; more. It works.");
+eq("plain semicolon still breaks", r("First; second here."), "First. Second here.");
+
 // ── core behavior (regression guard) ─────────────────────────────────────────
 eq("kid full pipeline", k("It’s fundamentally a thousand things."), "It is at heart a ten hundred things.");
 eq("regular expands contractions", r("It's a test."), "It is a test.");
